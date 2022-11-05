@@ -1,11 +1,8 @@
 #!/bin/bash
 
-_upload_(){
-    echo args
-    git add .
-    git commit -m args
-    git push origin master
-}
 
-args = "$@"
-_upload_ args
+git add .
+git commit -m "$1"
+git push origin master
+
+
