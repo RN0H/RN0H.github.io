@@ -1,0 +1,476 @@
+name: Testing the GitHub Pages publication
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency: test_environment
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set the GH Pages branch
+      uses: actions/github-script@v3
+      with:
+        github-token: ${{secrets.JEKYLL_PAT}} 
+        script: |
+          await github.repos.updateInformationAboutPagesSite({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            source: {
+              branch: "gh-pages",
+              path: "/"
+            }
+          })
+      
+  basic_run: 
+    runs-on: ubuntu-latest
+    needs: [init]
+    outputs:
+      sha: ${{ steps.run.outputs.sha }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: sample_site_gemfiles/vendor/bundle
+        key: gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          gems
+    - name: Basic run
+      id: run
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_basic.yml"
+        jekyll_env: development
+        build_only: false
+        pre_build_commands: apk --update add imagemagick nodejs
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+  basic_publish: 
+    runs-on: ubuntu-latest
+    needs: [basic_run]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.basic_run.outputs.sha }} 
+        branch: "gh-pages"
+        path: "/"
+  
+  basic_test: 
+    runs-on: ubuntu-latest
+    needs: [basic_publish]
+    steps:  
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/basic/**/*
+        suffix: "basic"
+
+  build_dir_run: 
+    runs-on: ubuntu-latest
+    needs: [init]
+    outputs:
+      sha: ${{ steps.run.outputs.sha }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: sample_site_gemfiles/vendor/bundle
+        key: gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          gems
+    - name: Build dir run
+      id: run
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_build_dir.yml"
+        build_dir: /jekyll_build_dir
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+  build_dir_publish: 
+    runs-on: ubuntu-latest
+    needs: [build_dir_run, basic_test]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.basic_run.outputs.sha }} 
+        branch: "gh-pages"
+        path: "/"
+
+  build_dir_test: 
+    runs-on: ubuntu-latest
+    needs: [build_dir_publish]
+    steps:  
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/basic/**/*
+        suffix: "jekyll_build_dir"
+
+  jekyll_bundler_run: 
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.run.outputs.sha }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Delete lock file
+      run: |
+        rm sample_site_gemfiles/Gemfile.lock
+    - uses: actions/cache@v2
+      with:
+        path: sample_site_gemfiles/vendor/bundle
+        key: gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          gems
+    - name: Jekyll bundler run
+      id: run
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_jekyll_bundler.yml"
+        jekyll_src: sample_site
+        target_branch: jekyll_bundler_test_pages_branch
+        jekyll_env: production
+        bundler_version: 2.3.11
+        token: ${{secrets.JEKYLL_PAT}} 
+      env:
+        JEKYLL_DEBUG: true
+    - name: Show used bundle version
+      run: |
+        bundle -v | cut -c 16- | xargs
+        cat sample_site_gemfiles/Gemfile.lock
+        
+  jekyll_bundler_publish: 
+    runs-on: ubuntu-latest
+    needs: [build_dir_test, jekyll_bundler_run]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.jekyll_bundler_run.outputs.sha }} 
+        branch: "jekyll_bundler_test_pages_branch"
+        path: "/"
+
+  jekyll_bundler_test: 
+    runs-on: ubuntu-latest
+    needs: jekyll_bundler_publish
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/jekyll_bundler/**/*
+        suffix: "jekyll_bundler"
+
+  jekyll_bundler_from_lock_run: 
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.run.outputs.sha }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: sample_site_gemfiles/vendor/bundle
+        key: gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          gems
+    - name: Jekyll bundler lock run
+      id: run
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_jekyll_bundler_lock.yml"
+        jekyll_src: sample_site
+        target_branch: jekyll_bundler_lock_test_pages_branch
+        jekyll_env: production
+        token: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        JEKYLL_DEBUG: true
+        
+  jekyll_bundler_from_lock_publish: 
+    runs-on: ubuntu-latest
+    needs: [jekyll_bundler_test, jekyll_bundler_from_lock_run]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.jekyll_bundler_from_lock_run.outputs.sha }} 
+        branch: "jekyll_bundler_lock_test_pages_branch"
+        path: "/"
+
+  jekyll_bundler_from_lock_test: 
+    runs-on: ubuntu-latest
+    needs: jekyll_bundler_from_lock_publish
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/jekyll_bundler_lock/**/*
+        suffix: "jekyll_bundler_lock"
+
+  jekyll_src_run: 
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.run.outputs.sha }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: sample_site_gemfiles/vendor/bundle
+        key: gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          gems
+    - name: Jekyll src run
+      id: run
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_jekyll_src.yml"
+        jekyll_src: sample_site
+        target_branch: jekyll_src_test_pages_branch
+        jekyll_env: production
+      env:
+        JEKYLL_PAT: ${{ secrets.GITHUB_TOKEN }}
+        JEKYLL_DEBUG: true
+        
+  jekyll_src_publish: 
+    runs-on: ubuntu-latest
+    needs: [jekyll_bundler_from_lock_test, jekyll_src_run]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.jekyll_src_run.outputs.sha }} 
+        branch: "jekyll_src_test_pages_branch"
+        path: "/"
+
+  jekyll_src_test: 
+    runs-on: ubuntu-latest
+    needs: jekyll_src_publish
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/jekyll_src/**/*
+        suffix: "jekyll_src"
+
+  jekyll_gem_src_run: 
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: sample_site_gemfiles/vendor/bundle
+        key: gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          gems
+    - name: Basic run
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_jekyll_gem_src.yml"
+        jekyll_src: sample_site
+        gem_src: sample_site_gemfiles
+        target_branch: jekyll_gem_src_test_pages_branch
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+  jekyll_gem_src_publish: 
+    runs-on: ubuntu-latest
+    needs: [jekyll_src_test, jekyll_gem_src_run]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.jekyll_gem_src_run.outputs.sha }} 
+        branch: "jekyll_gem_src_test_pages_branch"
+        path: "/"
+  
+  jekyll_gem_src_test: 
+    runs-on: ubuntu-latest
+    needs: [jekyll_gem_src_publish]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/jekyll_gem_src/**/*
+        suffix: "jekyll_gem_src"
+
+  build_only_run: 
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: sample_site_gemfiles/vendor/bundle
+        key: gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          gems
+    - name: Build only run
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_build_only.yml"
+        jekyll_env: development
+        build_only: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+  build_only_publish: 
+    runs-on: ubuntu-latest
+    needs: [jekyll_gem_src_test, build_only_run]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.jekyll_gem_src_run.outputs.sha }} 
+        branch: "jekyll_gem_src_test_pages_branch"
+        path: "/"
+    
+  build_only_test: 
+    runs-on: ubuntu-latest
+    needs: build_only_publish
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/jekyll_gem_src/**/*  # We're not publishing so the previous test should still pass
+        suffix: "build_only"
+  
+  keep_history_prepare: 
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: keep_history_test_pages_branch
+    - run: | 
+        rm -rf *
+        echo "<html><body><p>hello</p><p>${GITHUB_RUN_ID}</p></body></html>" > hello.html
+        git config user.name "${GITHUB_ACTOR}"
+        git config user.email "${GITHUB_ACTOR}@users.noreply.github.com" 
+        git add hello.html
+        git commit -m "adding a new file"
+        git push --force origin keep_history_test_pages_branch
+  
+  keep_history_run: 
+    runs-on: ubuntu-latest
+    needs: keep_history_prepare
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: sample_site_gemfiles/vendor/bundle
+        key: gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          gems
+    - name: Keep history run
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_keep_history.yml"
+        jekyll_src: sample_site
+        target_branch: keep_history_test_pages_branch
+        keep_history: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+  keep_history_publish: 
+    runs-on: ubuntu-latest
+    needs: [build_only_test, keep_history_run]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.keep_history_run.outputs.sha }} 
+        branch: "keep_history_test_pages_branch"
+        path: "/"
+  
+  keep_history_test: 
+    runs-on: ubuntu-latest
+    needs: keep_history_publish
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/keep_history/**/*
+        suffix: "keep_history"
+    
+  multiple_versions_slash_publish: 
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: master
+    - name: Run with dest path
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_multiple_versions.yml"
+        target_branch: multiple_versions_test_pages_branch
+        target_path: /
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+  multiple_versions_current_publish: 
+    runs-on: ubuntu-latest
+    needs: multiple_versions_slash_publish
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: master
+    - name: Run with dest path
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_multiple_versions.yml"
+        target_branch: multiple_versions_test_pages_branch
+        keep_history: true
+        target_path: current
+        token: ${{ secrets.GITHUB_TOKEN }}
+  
+  multiple_versions_old_publish: 
+    runs-on: ubuntu-latest
+    needs: multiple_versions_current_publish
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: test-old-version
+    - name: Run with dest path
+      uses: ./
+      with:
+        jekyll_build_options: "--config ../sample_site/_config.yml,../sample_site/_config_multiple_versions.yml"
+        target_branch: multiple_versions_test_pages_branch
+        keep_history: true
+        target_path: old
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+  
+  multiple_versions_publish: 
+    runs-on: ubuntu-latest
+    needs: [keep_history_test, multiple_versions_old_publish]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/publish
+      with: 
+        token: ${{ secrets.JEKYLL_PAT }}
+        sha: ${{ needs.multiple_versions_old_publish.outputs.sha }} 
+        branch: "multiple_versions_test_pages_branch"
+        path: "/"
+
+  multiple_versions_test: 
+    runs-on: ubuntu-latest
+    needs: multiple_versions_publish
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/test
+      with: 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        spec: cypress/integration/multiple/**/*
+        suffix: "multiple_versions"
