@@ -1,8 +1,7 @@
 #!/bin/bash
 
-_upload(){
+
+    echo "$1"
     git add .
-    git commit -m "Uploaded using script"
+    git commit -m "$1"
     git push origin master
-}
-_upload
