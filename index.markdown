@@ -5,6 +5,5 @@ title: Rohan Panicker
 layout: home
 ---
 
-<h1> {{page.title}} </h1>
 
 
