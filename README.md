@@ -1,1 +1,1 @@
-This is the source code to Jon Barron's public academic website: https://jonbarron.info/. Feel free to clone this code for your own personal use.
+Rohan Panicker's public website for academic, research and industrial purposes : https://rn0h.github.io/
