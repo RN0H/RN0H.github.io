@@ -1,3 +1,0 @@
-I am currently a Graduate student at the University of Washington, Seattle, pursuing a masters in 
-Mechanical Engineering. My interests are centered around imitation learning, out of distribution detection, and control theory for 
-Robotics. My objective is to develop adaptive robots capable of navigating and performing high level tasks in complex environments effectively.
