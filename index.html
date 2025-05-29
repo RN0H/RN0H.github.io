@@ -6,13 +6,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Rohan Panicker">
   <link rel="shortcut icon" href="images/favicon/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="stylesheet.css">
+  <link rel="stylesheet" type="text/css" href="stylesheet.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    h2 {
+      max-width: 800px;
+      margin: 40px auto 20px;
+      padding-left: 2.5%;
+    }
+    table {
+      width: 100%;
+      max-width: 800px;
+      margin: auto;
+      border-spacing: 20px 10px;
+    }
+    ul {
+      max-width: 800px;
+      margin: auto;
+    }
+    video {
+      width: 100%;
+      max-width: 400px;
+      display: block;
+      margin-bottom: 10px;
+      border-radius: 12px;
+    }
+  </style>
 </head>
-
 <body>
   <table>
     <tr>
-      <td style="width:63%; vertical-align:middle; padding:2.5%;">
+      <td style="width:63%;vertical-align:middle;padding:2.5%;">
         <p class="name" style="text-align:center;">Rohan Panicker</p>
         <p>I’m a full-stack roboticist with almost 4 years of exposure in Controls, Perception and Embedded Systems. I completed my master's at <a href="https://www.washington.edu/">the University of Washington, Seattle</a>, specializing in Robotics, Controls, and AI.</p>
         <p>I was a student researcher at the <a href="https://robotlearning.cs.washington.edu/">Robot Learning Lab</a> at the <a href="https://www.cs.washington.edu/">Paul G Allen School</a>, working on field robotics, quadrupeds, and wheeled robots developing the autonomy stack.</p>
@@ -26,8 +52,8 @@
           <a href="https://www.linkedin.com/in/rohpan/">LinkedIn</a>
         </p>
       </td>
-      <td style="width:35%; padding:2.5%;">
-        <img src="images/rohpan.jpg" alt="Profile photo">
+      <td style="width:35%;padding:2.5%;">
+        <img src="images/rohpan.jpg" style="width:100%;border-radius:50%;" alt="Profile photo">
       </td>
     </tr>
   </table>
@@ -35,21 +61,21 @@
   <h2>Experience</h2>
   <table>
     <tr>
-      <td><img src="images/amazon-robotics.png"></td>
+      <td><img src="images/amazon-robotics.png" style="width:100%;max-width:200px;"></td>
       <td>
         <strong>Amazon Robotics</strong><br>
         Worked on motion and task planning for mobile robots, integrating vision-language models. Built a scalable wrapper for multi-robot systems using AWS. Presented at Amazon Robotics Conference.
       </td>
     </tr>
     <tr>
-      <td><img src="images/GH-Labs.png"></td>
+      <td><img src="images/GH-Labs.png" style="width:100%;max-width:200px;"></td>
       <td>
         <strong>Global Health Labs</strong><br>
         Developed edge detection and color correction for a COVID test-kit reader. Contributed to embedded design, cutting product cost by over 90%.
       </td>
     </tr>
     <tr>
-      <td><img src="images/tasl.png"></td>
+      <td><img src="images/tasl.png" style="width:100%;max-width:200px;"></td>
       <td>
         <strong>Tata Advanced Systems</strong><br>
         Implemented object tracking and gimbal control using YOLOv8 and MPC. Improved tracking accuracy via IMU + optical flow fusion.
@@ -79,27 +105,76 @@
 
   <h2>Publications</h2>
   <table>
+
+  <tr>
+    <td style="padding:16px;width:20%;vertical-align:middle">
+      <div class="one">
+        <img src='images/dynamics-learning.png' width=100%>
+      </div>
+    </td>
+    <td style="padding:8;width:80%;vertical-align:middle">
+      <span class="papertitle">Dynamics Models in the Aggressive Off-Road Driving Regime</span>
+      <br>
+      <span class = "authors"> </span>
+      <span class = "authors">Tyler Han</span>,
+      <span class = "authors">Sidharth Talia</span>,
+      <strong>Rohan Panicker</strong>,
+      <span class = "authors">Preet Shah</span>,
+      <span class = "authors">Neel Jawale</span>,
+      <span class = "authors">Byron Boots</span>,
+      <p>
+        Workshop on Resilient Off-Road Autonomy, ICRA, 2024
+      </p>
+      <a href="https://arxiv.org/abs/2405.16487">arXiv</a>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:16px;width:20%;vertical-align:middle">
+      <div class="one">
+        <img src='images/LiDAR-camera-fusion.png' width=100% height="100%">
+      </div>
+    </td>
+    
+    <td style="padding:8px;width:80%;vertical-align:middle">
+      <span class="papertitle">Sensor fusion between IMU and 2D LiDAR Odometry based on NDT-ICP algorithm for Real-Time Indoor 3D Mapping</span>
+      <br>
+      <span class = "authors"> </span>
+      <span class = "authors">Rohan Panicker</span>,
+      <p>
+        In this paper, we fuse data from an Inertial Measurement Unit (IMU) 
+        and a 2D Light Detection and Ranging (LiDAR) with the help of an Extended Kalman Filter (EKF) 
+        for producing a 3D map of an indoor environment. 
+      </p>
+      <a href="https://www.techrxiv.org/doi/full/10.36227/techrxiv.23731134.v1">techrXiv</a>
+    </td>
+  </tr>
+
     <tr>
-      <td><strong>Dynamics Models in the Aggressive Off-Road Driving Regime</strong><br>
-        Tyler Han, Sidharth Talia, <strong>Rohan Panicker</strong>, Preet Shah, Neel Jawale, Byron Boots<br>
-        Workshop on Resilient Off-Road Autonomy, ICRA 2024<br>
-        <a href="https://arxiv.org/abs/2405.16487">arXiv</a>
+      <td style="padding:16px;width:20%;vertical-align:middle">
+        <div class="one">
+          <img src='images/voice-exo.png' width=100% height="100%">
+        </div>
       </td>
-    </tr>
-    <tr>
-      <td><strong>Sensor Fusion between IMU and 2D LiDAR Odometry for Real-Time Indoor 3D Mapping</strong><br>
-        <strong>Rohan Panicker</strong><br>
-        Fuses IMU + LiDAR using EKF for indoor 3D mapping<br>
-        <a href="https://www.techrxiv.org/doi/full/10.36227/techrxiv.23731134.v1">techRxiv</a>
-      </td>
-    </tr>
-    <tr>
-      <td><strong>Voice-Controlled Upper Body Exoskeleton</strong><br>
-        Shivam Tripathy, <strong>Rohan Panicker</strong>, Shubh Shrey, Rutvik Naik, S.S. Pachpore<br>
-        Uses Arduino + voice recognition for upper-body exoskeleton actuation<br>
+      
+      <td style="padding:8px;width:80%;vertical-align:middle">
+        <span class="papertitle">Voice-controlled upper body exoskeleton</span>
+        <br>
+        <span class = "authors"> </span>
+        <span class = "authors">Shivam Tripathy</span>,
+        <span class = "authors">Rohan Panicker</span>,
+        <strong>Rohan Panicker</strong>,
+        <span class = "authors">Shubh Shrey</span>,
+        <span class = "authors">Rutvik Naik</span>,
+        <span class = "authors">S S Pachpore</span>,
+        <p>
+          This paper is about designing an upper body exoskeleton and utilizing a arduino supported voice recognition module
+          for translating commands into desired actuations. 
+          </p>
         <a href="https://arxiv.org/pdf/2009.08033">arXiv</a>
       </td>
     </tr>
+
   </table>
 
   <h2>News</h2>
