@@ -7,10 +7,37 @@
   <meta name="author" content="Rohan Panicker">
   <link rel="shortcut icon" href="images/favicon/favicon.ico" type="image/x-icon">
   <link rel="stylesheet" type="text/css" href="stylesheet.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    h2 {
+      max-width: 800px;
+      margin: 40px auto 20px;
+      padding-left: 2.5%;
+    }
+    table {
+      width: 100%;
+      max-width: 800px;
+      margin: auto;
+      border-spacing: 20px 10px;
+    }
+    ul {
+      max-width: 800px;
+      margin: auto;
+    }
+    video {
+      width: 100%;
+      max-width: 400px;
+      display: block;
+      margin-bottom: 10px;
+      border-radius: 12px;
+    }
+  </style>
 </head>
 
 <body>
-  <table style="width:100%;max-width:800px;margin:auto;border-spacing:0;">
+  <table>
     <tr>
       <td style="width:63%;vertical-align:middle;padding:2.5%;">
         <p class="name" style="text-align:center;">Rohan Panicker</p>
@@ -20,7 +47,7 @@
         <p style="text-align:center;">
           <a href="mailto:rohanpan27@gmail.com">Email</a> |
           <a href="https://www.figma.com/proto/1QYSxK2zIzMW66vPCMEib4/Rohan-Panicker?node-id=118-2&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=118%3A2">Bio</a> |
-          <a href="data/Rohan PanickerCV2025ML.pdf">CV</a> |
+          <a href="data/Rohan PanickerCV2025.pdf">CV</a> |
           <a href="https://scholar.google.com/citations?user=ehOZtIQAAAAJ&hl=en&oi=ao">Scholar</a> |
           <a href="https://github.com/RN0H">Github</a> |
           <a href="https://www.linkedin.com/in/rohpan/">LinkedIn</a>
@@ -32,9 +59,8 @@
     </tr>
   </table>
 
-  <!-- Experience -->
   <h2>Experience</h2>
-  <table style="width:100%;max-width:800px;margin:auto;border-spacing:20px 10px;">
+  <table>
     <tr>
       <td><img src="images/amazon-robotics.png" style="width:100%;max-width:200px;"></td>
       <td>
@@ -58,12 +84,11 @@
     </tr>
   </table>
 
-  <!-- Projects -->
   <h2>Projects</h2>
-  <table style="width:100%;max-width:800px;margin:auto;border-spacing:20px 10px;">
+  <table>
     <tr>
       <td>
-        <video width="100%" controls>
+        <video muted autoplay loop playsinline>
           <source src="videos/b2w-rl.mp4" type="video/mp4">
         </video>
         <p><strong>Reinforcement Learning for Wheeled Legged Robots</strong></p>
@@ -71,7 +96,7 @@
     </tr>
     <tr>
       <td>
-        <video width="100%" controls>
+        <video muted autoplay loop playsinline>
           <source src="videos/field-testing.mp4" type="video/mp4">
         </video>
         <p><strong>Out of Distribution Detection for Field Robots</strong></p>
@@ -79,9 +104,8 @@
     </tr>
   </table>
 
-  <!-- Publications -->
   <h2>Publications</h2>
-  <table style="width:100%;max-width:800px;margin:auto;border-spacing:20px 10px;">
+  <table>
     <tr>
       <td><strong>Dynamics Models in the Aggressive Off-Road Driving Regime</strong><br>
         Tyler Han, Sidharth Talia, <strong>Rohan Panicker</strong>, Preet Shah, Neel Jawale, Byron Boots<br>
@@ -105,14 +129,12 @@
     </tr>
   </table>
 
-  <!-- News -->
   <h2>News</h2>
-  <ul style="max-width:800px;margin:auto;">
+  <ul>
     <li>09/2024 – Joined Amazon Robotics as a Robotics Software Intern</li>
     <li>06/2024 – Joined Global Health Labs as a summer intern!</li>
     <li>06/2024 – ICRA Workshop paper accepted!</li>
     <li>09/2023 – Started Master’s at UW!</li>
   </ul>
-
 </body>
 </html>
