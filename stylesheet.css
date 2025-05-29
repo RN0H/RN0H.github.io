@@ -74,6 +74,7 @@ a:hover {
   text-decoration: none;
 }
 
+
 body,
 td,
 th,
@@ -132,4 +133,12 @@ h2 {
 
 span.highlight {
   background-color: #ffffd0;
+}
+
+video {
+  width: 100%;
+  max-width: 300px;
+  display: block;
+  margin-bottom: 10px;
+  border-radius: 12px;
 }
