@@ -1,0 +1,9 @@
+TITLE: Plain .txt posts work too
+DATE: 2025-03-22
+SUMMARY: Use this format if you prefer not to use Markdown front matter.
+
+---
+
+Write the body here. Separate paragraphs with a blank line.
+
+Use TITLE, DATE, and optional SUMMARY at the top, then a line with only three dashes, then your text.
