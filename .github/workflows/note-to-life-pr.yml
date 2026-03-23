@@ -1,0 +1,102 @@
+# Trigger from iPad/iPhone via repository_dispatch (Apple Shortcuts → GitHub API).
+# Types: note-to-life (upsert), note-delete-life (remove topic).
+#
+# client_payload (JSON):
+#   secret          — must match repo secret NOTE_DISPATCH_SECRET
+#   slug            — stable topic id (e.g. habits-and-sleep)
+#   raw_text_b64    — Base64 UTF-8 note body (required for note-to-life)
+#
+# Secrets: NOTE_DISPATCH_SECRET, GROQ_API_KEY (or OPENAI_API_KEY)
+name: Note to Life (PR)
+
+on:
+  repository_dispatch:
+    types: [note-to-life, note-delete-life]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  note-life:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify dispatch secret
+        env:
+          EXPECTED: ${{ secrets.NOTE_DISPATCH_SECRET }}
+          GOT: ${{ github.event.client_payload.secret }}
+        run: |
+          if [ -z "$EXPECTED" ]; then echo "::error::NOTE_DISPATCH_SECRET is not set in repo Secrets"; exit 1; fi
+          if [ "$GOT" != "$EXPECTED" ]; then echo "::error::Invalid client_payload.secret"; exit 1; fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Decode note (upsert)
+        id: decode
+        if: github.event.action == 'note-to-life'
+        env:
+          B64: ${{ github.event.client_payload.raw_text_b64 }}
+        run: |
+          python3 -c "
+          import base64, os, pathlib, sys
+          b = os.environ.get('B64', '').strip()
+          if not b:
+              print('::error::client_payload.raw_text_b64 is required for note-to-life', file=sys.stderr)
+              sys.exit(1)
+          pathlib.Path('/tmp/note.txt').write_bytes(base64.b64decode(b))
+          "
+
+      - name: Upsert Life post
+        if: github.event.action == 'note-to-life'
+        env:
+          # Prefer Groq; script falls back to OPENAI_API_KEY if GROQ_API_KEY is empty.
+          # Secret name must match what you created (e.g. groq_api_key vs GROQ_API_KEY).
+          GROQ_API_KEY: ${{ secrets.groq_api_key }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          SLUG: ${{ github.event.client_payload.slug }}
+        run: |
+          python3 scripts/note_to_life.py upsert --slug "$SLUG" --raw-file /tmp/note.txt
+
+      - name: Delete Life post
+        if: github.event.action == 'note-delete-life'
+        env:
+          SLUG: ${{ github.event.client_payload.slug }}
+        run: |
+          if [ -z "$SLUG" ]; then echo "::error::client_payload.slug required"; exit 1; fi
+          python3 scripts/note_to_life.py delete --slug "$SLUG"
+
+      - name: Create branch and open PR
+        env:
+          SLUG: ${{ github.event.client_payload.slug }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          SAFE_SLUG=$(echo "$SLUG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-*//;s/-*$//' | cut -c1-60)
+          BRANCH="life/note-$(date -u +%Y%m%d)-${SAFE_SLUG}"
+          git checkout -b "$BRANCH"
+          git add content/life life
+          if git diff --staged --quiet; then
+            echo "::error::No changes to commit"
+            exit 1
+          fi
+          if [ "${{ github.event.action }}" = "note-delete-life" ]; then
+            MSG="Life: remove ${SLUG}"
+          else
+            MSG="Life: upsert ${SLUG}"
+          fi
+          git commit -m "$MSG"
+          git push origin "$BRANCH"
+          gh pr create \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$BRANCH" \
+            --title "$MSG" \
+            --body "Automated **${{ github.event.action }}** for slug \`${SLUG}\`. Review and merge to publish."

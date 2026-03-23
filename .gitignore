@@ -1,2 +1,3 @@
 .DS_Store
 .venv/
+scripts/__pycache__/
