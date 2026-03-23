@@ -1,0 +1,294 @@
+/* Shared + Life section — RN0H.github.io */
+
+:root {
+  --bg: #0f1115;
+  --surface: #171a21;
+  --text: #e8eaed;
+  --muted: #9aa0a6;
+  --accent: #7eb8da;
+  --accent-hover: #a8d4ef;
+  --border: #2a3038;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  --measure: 38rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--surface);
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+/* ----- Home ----- */
+
+body.home-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1.25rem;
+}
+
+.home-main {
+  max-width: 28rem;
+}
+
+.home-h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.home-lead {
+  margin: 0 0 2rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.home-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+@media (min-width: 480px) {
+  .home-nav {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.25rem;
+  }
+}
+
+.home-link {
+  display: inline-block;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.home-link:hover {
+  border-color: var(--accent);
+  background: rgba(126, 184, 218, 0.08);
+  color: var(--accent-hover);
+}
+
+.home-footer {
+  margin-top: auto;
+  padding-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.home-footer a {
+  color: var(--muted);
+}
+
+.home-footer a:hover {
+  color: var(--accent);
+}
+
+/* ----- Life section ----- */
+
+body.life-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.life-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  text-align: center;
+  line-height: 1.85;
+}
+
+.life-nav {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.life-nav:hover {
+  color: var(--accent-hover);
+}
+
+.life-nav-sep {
+  margin: 0 0.5rem;
+  color: var(--muted);
+}
+
+.life-main {
+  flex: 1;
+  width: 100%;
+  max-width: calc(var(--measure) + 2.5rem);
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.life-footer {
+  padding: 1.5rem 1.25rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.life-footer p {
+  margin: 0;
+}
+
+.life-h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.life-lead {
+  margin: 0 0 2rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.life-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.life-card {
+  margin: 0;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.life-card-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.life-card-title a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.life-card-title a:hover {
+  color: var(--accent);
+}
+
+.life-card-meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.life-card-summary {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.life-empty {
+  color: var(--muted);
+}
+
+.life-meta {
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.life-body {
+  font-size: 1.05rem;
+}
+
+.life-body p {
+  margin: 0 0 1rem;
+}
+
+.life-body p:last-child {
+  margin-bottom: 0;
+}
+
+.life-body ul,
+.life-body ol {
+  margin: 0 0 1rem;
+  padding-left: 1.35rem;
+}
+
+.life-body li {
+  margin-bottom: 0.35rem;
+}
+
+.life-body blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+
+.life-body h2,
+.life-body h3 {
+  margin: 1.5rem 0 0.75rem;
+  font-weight: 600;
+}
+
+.life-back {
+  margin: 2rem 0 0;
+  font-size: 0.95rem;
+}
+
+.life-back a {
+  color: var(--muted);
+}
+
+.life-back a:hover {
+  color: var(--accent);
+}
