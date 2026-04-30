@@ -3,8 +3,12 @@
 #
 # client_payload (JSON):
 #   secret          — must match repo secret NOTE_DISPATCH_SECRET
-#   slug            — stable topic id (e.g. habits-and-sleep)
-#   raw_text_b64    — Base64 UTF-8 note body (required for note-to-life)
+#   slug            — for note-to-life: free-form PROMPT. An LLM router classifies
+#                     the prompt against existing posts to pick the target slug and
+#                     decide between create / instruction-edit / preserve-meta.
+#                     Empty prompt => use the body's first line as the slug.
+#                     For note-delete-life: the literal topic slug to remove.
+#   raw_text_b64    — Base64 UTF-8 note body (required for note-to-life).
 #
 # Secrets: NOTE_DISPATCH_SECRET, GROQ_API_KEY (or OPENAI_API_KEY)
 name: Note to Life (PR)
@@ -54,6 +58,7 @@ jobs:
           "
 
       - name: Upsert Life post
+        id: upsert
         if: github.event.action == 'note-to-life'
         env:
           # Prefer Groq; script falls back to OPENAI_API_KEY if GROQ_API_KEY is empty.
@@ -61,26 +66,39 @@ jobs:
           GROQ_API_KEY: ${{ secrets.groq_api_key }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
-          SLUG: ${{ github.event.client_payload.slug }}
+          PROMPT: ${{ github.event.client_payload.slug }}
         run: |
-          python3 scripts/note_to_life.py upsert --slug "$SLUG" --raw-file /tmp/note.txt
+          OUT=$(python3 scripts/note_to_life.py upsert --prompt "$PROMPT" --raw-file /tmp/note.txt)
+          echo "$OUT"
+          TARGET_SLUG=$(echo "$OUT" | tail -n1 | sed -n 's/^slug=//p')
+          if [ -z "$TARGET_SLUG" ]; then
+            echo "::error::upsert script did not emit a slug"
+            exit 1
+          fi
+          echo "slug=$TARGET_SLUG" >> "$GITHUB_OUTPUT"
 
       - name: Delete Life post
+        id: delete
         if: github.event.action == 'note-delete-life'
         env:
           SLUG: ${{ github.event.client_payload.slug }}
         run: |
           if [ -z "$SLUG" ]; then echo "::error::client_payload.slug required"; exit 1; fi
           python3 scripts/note_to_life.py delete --slug "$SLUG"
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
 
       - name: Create branch and open PR
         env:
-          SLUG: ${{ github.event.client_payload.slug }}
+          TARGET_SLUG: ${{ steps.upsert.outputs.slug || steps.delete.outputs.slug }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
+          if [ -z "$TARGET_SLUG" ]; then
+            echo "::error::no target slug resolved"
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          SAFE_SLUG=$(echo "$SLUG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-*//;s/-*$//' | cut -c1-60)
+          SAFE_SLUG=$(echo "$TARGET_SLUG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-*//;s/-*$//' | cut -c1-60)
           BRANCH="life/note-$(date -u +%Y%m%d)-${SAFE_SLUG}"
           git checkout -b "$BRANCH"
           git add content/life life
@@ -89,9 +107,9 @@ jobs:
             exit 1
           fi
           if [ "${{ github.event.action }}" = "note-delete-life" ]; then
-            MSG="Life: remove ${SLUG}"
+            MSG="Life: remove ${TARGET_SLUG}"
           else
-            MSG="Life: upsert ${SLUG}"
+            MSG="Life: upsert ${TARGET_SLUG}"
           fi
           git commit -m "$MSG"
           git push origin "$BRANCH"
@@ -99,4 +117,4 @@ jobs:
             --base "${{ github.event.repository.default_branch }}" \
             --head "$BRANCH" \
             --title "$MSG" \
-            --body "Automated **${{ github.event.action }}** for slug \`${SLUG}\`. Review and merge to publish."
+            --body "Automated **${{ github.event.action }}** for slug \`${TARGET_SLUG}\`. Review and merge to publish."

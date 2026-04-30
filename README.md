@@ -92,21 +92,33 @@ The workflow uses `secrets.groq_api_key`. If your secret is named **`GROQ_API_KE
 
 Optional: repository **Variables** → `LLM_MODEL` (e.g. `llama-3.1-8b-instant`). Defaults: Groq `llama-3.3-70b-versatile`, OpenAI `gpt-4o-mini`.
 
-### Event: `note-to-life` (create or update a topic)
+### Event: `note-to-life` (create or edit a topic)
 
-Each topic has a **stable `slug`** (e.g. `evening-routine`). Reusing the same slug **overwrites** `content/life/<slug>.md` (upsert).
+The `slug` field is the **prompt**. There is one mental model: an LLM router classifies the prompt against the existing posts and decides what to do.
+
+| Prompt | What happens |
+|---|---|
+| **Empty** | Use the **first non-blank line** of the note body as the slug. If `content/life/<slug>.md` exists, preserve its `title`/`date`/`summary` and only rewrite the body. If it does not exist, create a new post with that title. |
+| **Title-like** (e.g. `Evening Routine`) | Slugified into `evening-routine`. If the post exists, the body is rewritten while `title`/`date`/`summary` are preserved. If not, a new post is created using the prompt as the title. |
+| **Instruction-like** (e.g. `make the summary one line for evening-routine`) | The router extracts `target_slug=evening-routine` and applies the instruction to that post via the LLM. `date` is preserved. |
 
 `client_payload` fields:
 
 - `secret` — must match `NOTE_DISPATCH_SECRET`
-- `slug` — topic id (letters, numbers, hyphens)
-- `raw_text_b64` — **Base64 (UTF-8)** of the full note text. Optional first line `SLUG: my-slug` is stripped before sending to the model.
+- `slug` — free-form prompt (≤500 chars, no `/`, `\`, or `..`), or empty
+- `raw_text_b64` — **Base64 (UTF-8)** of the full note text
 
 `event_type` must be `note-to-life`.
 
+#### Examples
+
+- **Re-edit the body of an existing post, preserving the title**: send the same note again with `slug=""`. The first line of the body resolves to the post's slug; title/summary stay intact, body is regenerated from the new text.
+- **Create a new post with a chosen title**: `slug="Evening Routine"`, body contains the rough notes. Writes `content/life/evening-routine.md`.
+- **Edit a specific post with an instruction**: `slug="make the summary one line for evening-routine"`, body optionally provides new source material. The router targets `evening-routine.md` and applies the instruction.
+
 ### Event: `note-delete-life` (remove a topic)
 
-Deleting a note in Apple Notes **does not** notify GitHub. To remove a published topic, send `repository_dispatch` with `event_type: `**`note-delete-life`** and `client_payload`: `{ "secret", "slug" }`.
+Deleting a note in Apple Notes **does not** notify GitHub. To remove a published topic, send `repository_dispatch` with `event_type: `**`note-delete-life`** and `client_payload`: `{ "secret", "slug" }`. For delete, `slug` is the literal topic slug (e.g. `keep-title-aame`), **not** a prompt.
 
 ### Example `curl` (replace owner, repo, PAT, values)
 
@@ -115,8 +127,12 @@ export OWNER=RN0H
 export REPO=RN0H.github.io
 export PAT=github_pat_...
 export SECRET='your-long-random-secret'
-export SLUG=my-topic
-export B64=$(printf '%s' "Your raw note text" | base64 -w0)
+# The slug field is the prompt. Examples:
+#   PROMPT=""                            # use body's first line as the slug
+#   PROMPT="Evening Routine"             # title-like; creates or refreshes evening-routine.md
+#   PROMPT="shorten summary for evening-routine"  # instruction-like; edits evening-routine.md
+export PROMPT='Evening Routine'
+export B64=$(printf '%s' "Your new note text goes here." | base64 -w0)
 
 curl -sS -X POST \
   -H "Authorization: Bearer $PAT" \
@@ -124,7 +140,7 @@ curl -sS -X POST \
   -H "X-GitHub-Api-Version: 2022-11-24" \
   "https://api.github.com/repos/$OWNER/$REPO/dispatches" \
   -d "$(jq -n \
-    --arg slug "$SLUG" \
+    --arg slug "$PROMPT" \
     --arg secret "$SECRET" \
     --arg b64 "$B64" \
     '{event_type:"note-to-life", client_payload:{slug:$slug, secret:$secret, raw_text_b64:$b64}}')"
