@@ -94,7 +94,7 @@ Optional: repository **Variables** → `LLM_MODEL` (e.g. `llama-3.1-8b-instant`)
 
 ### Event: `note-to-life` (create or edit a topic)
 
-The `slug` field is the **prompt**. There is one mental model: an LLM router classifies the prompt against the existing posts and decides what to do.
+The `slug` field is the **prompt**. There is one mental model: an LLM router classifies the prompt against the existing posts (each post’s YAML `title`, filename `slug`, and up to eight `#` / `##` … headings from the Markdown body) and decides what to do.
 
 | Prompt | What happens |
 |---|---|

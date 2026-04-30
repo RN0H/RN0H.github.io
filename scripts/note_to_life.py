@@ -38,6 +38,7 @@ LIFE_DIR = REPO_ROOT / "life"
 EXEMPLAR = CONTENT_DIR / "welcome.md"
 
 MAX_PROMPT_LEN = 500
+MAX_HEADINGS_PER_POST = 8
 
 
 def _slug_from_stem(stem: str) -> str:
@@ -129,8 +130,30 @@ def _front_matter_date(fm: dict) -> date | None:
         return None
 
 
+def _extract_atx_headings(body: str, *, limit: int = MAX_HEADINGS_PER_POST) -> list[str]:
+    """First N unique ATX Markdown headings (# .. ######) from the body, in order."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for line in body.splitlines():
+        m = re.match(r"^\s{0,3}(#{1,6})\s+(.+?)\s*$", line)
+        if not m:
+            continue
+        text = m.group(2).strip()
+        text = re.sub(r"\s+#+\s*$", "", text).strip()
+        if not text:
+            continue
+        key = text.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(text)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def _list_existing_posts() -> list[dict]:
-    """Return a list of {slug, title} for every parseable post in content/life/."""
+    """Return slug, title, and in-body ATX headings for every parseable post."""
     if not CONTENT_DIR.is_dir():
         return []
     out: list[dict] = []
@@ -141,7 +164,7 @@ def _list_existing_posts() -> list[dict]:
             raw = path.read_text(encoding="utf-8")
         except OSError:
             continue
-        fm_raw, _ = _split_front_matter(raw)
+        fm_raw, body = _split_front_matter(raw)
         if fm_raw is None:
             continue
         try:
@@ -149,7 +172,10 @@ def _list_existing_posts() -> list[dict]:
         except yaml.YAMLError:
             continue
         title = str(fm.get("title") or "").strip() or path.stem
-        out.append({"slug": path.stem, "title": title})
+        headings = _extract_atx_headings(body)
+        title_cf = title.casefold()
+        headings = [h for h in headings if h.casefold() != title_cf]
+        out.append({"slug": path.stem, "title": title, "headings": headings})
     return out
 
 
@@ -222,12 +248,14 @@ def _route_prompt(prompt: str, existing: list[dict], first_line: str) -> dict:
 
     system = (
         "You route a blog edit dispatch. You receive a free-form PROMPT, the "
-        "list of EXISTING posts (slug + title), and the FIRST_LINE of the new "
+        "list of EXISTING posts (each has slug, title, and headings: Markdown "
+        "# headings found in that post's body), and the FIRST_LINE of the new "
         "note body. Output ONLY a single JSON object with three string keys: "
         '"target_slug", "instruction", "title_hint". '
         "Rules: "
-        "(1) If the PROMPT clearly refers to an existing post (by slug or title), "
-        "set target_slug to that exact existing slug. "
+        "(1) If the PROMPT clearly refers to an existing post (by slug, by title, "
+        "or by any string in that post's headings array), set target_slug to "
+        "that exact existing slug. "
         "(2) Otherwise, slugify the PROMPT (lowercase, hyphens, alphanumerics only) "
         "into target_slug. If PROMPT is empty, use FIRST_LINE instead. "
         "(3) If the PROMPT reads as an instruction (verbs like 'add', 'remove', "
